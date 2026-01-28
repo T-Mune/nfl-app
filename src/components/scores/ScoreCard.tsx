@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Game } from '@/types/nfl';
-import { getGameStatus } from '@/lib/api/sportsdata';
+import { getGameStatus } from '@/lib/api/espn';
 import Link from 'next/link';
 
 interface ScoreCardProps {

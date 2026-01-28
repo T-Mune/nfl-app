@@ -46,7 +46,7 @@ export interface Game {
   HomeTeam: string;
   AwayScore: number | null;
   HomeScore: number | null;
-  Channel: string;
+  Channel: string | null;
   PointSpread: number | null;
   OverUnder: number | null;
   Quarter: string | null;
@@ -79,6 +79,13 @@ export interface Game {
   GameEndDateTime: string | null;
   StadiumID: number;
   Closed: boolean;
+  // ESPN extended fields
+  AwayTeamName?: string;
+  HomeTeamName?: string;
+  AwayTeamLogo?: string;
+  HomeTeamLogo?: string;
+  StatusDetail?: string;
+  Venue?: string;
 }
 
 // NFL Schedule (simplified game info)

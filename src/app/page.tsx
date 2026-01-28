@@ -4,9 +4,9 @@ import { WeekSelector } from '@/components/scores/WeekSelector';
 import {
   getScoresByWeek,
   getCurrentSeason,
-  getCurrentWeek,
   getSeasonWeeks,
-} from '@/lib/api/sportsdata';
+  getLiveScores,
+} from '@/lib/api/espn';
 import { Game } from '@/types/nfl';
 
 interface FetchResult {
@@ -28,18 +28,33 @@ async function fetchScores(
   }
 }
 
+async function fetchCurrentWeek(): Promise<{ week: number; season: number }> {
+  try {
+    const result = await getLiveScores();
+    return { week: result.week, season: result.season };
+  } catch {
+    return { week: 1, season: getCurrentSeason() };
+  }
+}
+
 async function Scores({ season, week }: { season: number; week: number }) {
   const { games, error } = await fetchScores(season, week);
 
   if (error || !games) {
     return (
       <div className="text-center py-8">
-        <p className="text-destructive">
-          Failed to load scores. Please check your API configuration.
-        </p>
+        <p className="text-destructive">Failed to load scores.</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Make sure SPORTSDATA_API_KEY is set in your environment variables.
+          Please try again later.
         </p>
+      </div>
+    );
+  }
+
+  if (games.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No games found for this week.
       </div>
     );
   }
@@ -66,11 +81,10 @@ interface HomePageProps {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
-  const currentSeason = getCurrentSeason();
-  const currentWeek = getCurrentWeek();
+  const current = await fetchCurrentWeek();
 
-  const season = params.season ? parseInt(params.season, 10) : currentSeason;
-  const week = params.week ? parseInt(params.week, 10) : currentWeek;
+  const season = params.season ? parseInt(params.season, 10) : current.season;
+  const week = params.week ? parseInt(params.week, 10) : current.week;
   const weeks = getSeasonWeeks();
 
   return (
@@ -81,13 +95,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           weeks={weeks}
           currentWeek={week}
           season={season}
-          currentSeason={currentSeason}
+          currentSeason={current.season}
         />
       </div>
 
       <div className="mb-4 text-sm text-muted-foreground">
         {season} Season - Week {week}
-        {week === currentWeek && season === currentSeason && ' (Current)'}
+        {week === current.week && season === current.season && ' (Current)'}
       </div>
 
       <Suspense key={`${season}-${week}`} fallback={<ScoresLoading />}>

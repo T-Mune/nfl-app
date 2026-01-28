@@ -1,9 +1,11 @@
 import { Suspense } from 'react';
 import { ScoresList } from '@/components/scores/ScoresList';
+import { WeekSelector } from '@/components/scores/WeekSelector';
 import {
   getScoresByWeek,
   getCurrentSeason,
   getCurrentWeek,
+  getSeasonWeeks,
 } from '@/lib/api/sportsdata';
 import { Game } from '@/types/nfl';
 
@@ -14,10 +16,10 @@ interface FetchResult {
   week: number;
 }
 
-async function fetchScores(): Promise<FetchResult> {
-  const season = getCurrentSeason();
-  const week = getCurrentWeek();
-
+async function fetchScores(
+  season: number,
+  week: number
+): Promise<FetchResult> {
   try {
     const games = await getScoresByWeek(season, week);
     return { games, error: false, season, week };
@@ -26,8 +28,8 @@ async function fetchScores(): Promise<FetchResult> {
   }
 }
 
-async function LiveScores() {
-  const { games, error, season, week } = await fetchScores();
+async function Scores({ season, week }: { season: number; week: number }) {
+  const { games, error } = await fetchScores(season, week);
 
   if (error || !games) {
     return (
@@ -42,14 +44,7 @@ async function LiveScores() {
     );
   }
 
-  return (
-    <div>
-      <div className="mb-4 text-sm text-muted-foreground">
-        {season} Season - Week {week}
-      </div>
-      <ScoresList games={games} />
-    </div>
-  );
+  return <ScoresList games={games} />;
 }
 
 function ScoresLoading() {
@@ -65,12 +60,38 @@ function ScoresLoading() {
   );
 }
 
-export default function HomePage() {
+interface HomePageProps {
+  searchParams: Promise<{ week?: string; season?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const currentSeason = getCurrentSeason();
+  const currentWeek = getCurrentWeek();
+
+  const season = params.season ? parseInt(params.season, 10) : currentSeason;
+  const week = params.week ? parseInt(params.week, 10) : currentWeek;
+  const weeks = getSeasonWeeks();
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Live Scores</h1>
-      <Suspense fallback={<ScoresLoading />}>
-        <LiveScores />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 className="text-3xl font-bold">Scores</h1>
+        <WeekSelector
+          weeks={weeks}
+          currentWeek={week}
+          season={season}
+          currentSeason={currentSeason}
+        />
+      </div>
+
+      <div className="mb-4 text-sm text-muted-foreground">
+        {season} Season - Week {week}
+        {week === currentWeek && season === currentSeason && ' (Current)'}
+      </div>
+
+      <Suspense key={`${season}-${week}`} fallback={<ScoresLoading />}>
+        <Scores season={season} week={week} />
       </Suspense>
     </div>
   );

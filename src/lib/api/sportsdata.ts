@@ -165,3 +165,27 @@ export function getGameStatus(game: Game): string {
   }
   return formatGameTime(game.Date);
 }
+
+// Get all scores for a season (past game results)
+export async function getScoresBySeason(season: number): Promise<Game[]> {
+  return fetchFromAPI<Game[]>(`/scores/json/Scores/${season}`);
+}
+
+// Get scores by specific date (format: YYYY-MM-DD)
+export async function getScoresByDate(date: string): Promise<Game[]> {
+  return fetchFromAPI<Game[]>(`/scores/json/ScoresByDate/${date}`);
+}
+
+// Get completed games only
+export async function getCompletedGamesByWeek(
+  season: number,
+  week: number
+): Promise<Game[]> {
+  const games = await getScoresByWeek(season, week);
+  return games.filter((game) => game.IsOver || game.Closed);
+}
+
+// Get all weeks with games for a season
+export function getSeasonWeeks(): number[] {
+  return Array.from({ length: 18 }, (_, i) => i + 1);
+}

@@ -129,7 +129,7 @@ async function StandingsContent() {
 
   return (
     <div>
-      <div className="mb-4 text-sm text-muted-foreground">
+      <div className="mb-4 text-sm text-muted-foreground bg-secondary/50 px-4 py-2 rounded-md inline-block">
         {season} Season Standings
       </div>
 
@@ -180,7 +180,10 @@ function StandingsLoading() {
 export default function StandingsPage() {
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Standings</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-1.5 h-8 bg-accent rounded-full" />
+        <h1 className="text-3xl font-bold text-primary">Standings</h1>
+      </div>
       <Suspense fallback={<StandingsLoading />}>
         <StandingsContent />
       </Suspense>

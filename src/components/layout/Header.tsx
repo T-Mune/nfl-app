@@ -16,23 +16,28 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+    <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-primary text-primary-foreground shadow-lg">
+      <div className="container flex h-16 items-center">
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="font-bold text-xl">NFL Stats</span>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+                <span className="text-accent-foreground font-bold text-sm">NFL</span>
+              </div>
+              <span className="font-bold text-xl tracking-tight">NFL Stats</span>
+            </div>
           </Link>
         </div>
-        <nav className="flex items-center space-x-6 text-sm font-medium">
+        <nav className="flex items-center space-x-1 text-sm font-medium">
           {navigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'transition-colors hover:text-foreground/80',
+                'px-4 py-2 rounded-md transition-colors',
                 pathname === item.href
-                  ? 'text-foreground'
-                  : 'text-foreground/60'
+                  ? 'bg-accent text-accent-foreground font-semibold'
+                  : 'text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground'
               )}
             >
               {item.name}

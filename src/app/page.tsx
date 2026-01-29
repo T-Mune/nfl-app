@@ -90,7 +90,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-bold">Scores</h1>
+        <div className="flex items-center gap-3">
+          <div className="w-1.5 h-8 bg-accent rounded-full" />
+          <h1 className="text-3xl font-bold text-primary">Live Scores</h1>
+        </div>
         <WeekSelector
           weeks={weeks}
           currentWeek={week}
@@ -99,9 +102,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         />
       </div>
 
-      <div className="mb-4 text-sm text-muted-foreground">
+      <div className="mb-4 text-sm text-muted-foreground bg-secondary/50 px-4 py-2 rounded-md inline-block">
         {season} Season - Week {week}
-        {week === current.week && season === current.season && ' (Current)'}
+        {week === current.week && season === current.season && (
+          <span className="ml-2 text-accent font-medium">(Current)</span>
+        )}
       </div>
 
       <Suspense key={`${season}-${week}`} fallback={<ScoresLoading />}>

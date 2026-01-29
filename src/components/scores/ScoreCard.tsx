@@ -14,27 +14,34 @@ export function ScoreCard({ game }: ScoreCardProps) {
   const isFinal = game.IsOver || game.Closed;
 
   return (
-    <Card className={isLive ? 'border-green-500 border-2' : ''}>
-      <CardContent className="p-4">
-        <div className="flex justify-between items-center mb-2">
-          <Badge variant={isLive ? 'default' : isFinal ? 'secondary' : 'outline'}>
-            {status}
+    <Card className={`overflow-hidden ${isLive ? 'border-accent border-2 shadow-lg' : 'border-t-4 border-t-primary'}`}>
+      <CardContent className="p-0">
+        {/* Header */}
+        <div className="flex justify-between items-center px-4 py-2 bg-secondary/50">
+          <Badge
+            variant={isLive ? 'default' : isFinal ? 'secondary' : 'outline'}
+            className={isLive ? 'bg-accent text-accent-foreground animate-pulse' : ''}
+          >
+            {isLive ? 'LIVE' : status}
           </Badge>
           {game.Channel && (
-            <span className="text-xs text-muted-foreground">{game.Channel}</span>
+            <span className="text-xs text-muted-foreground font-medium">{game.Channel}</span>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="p-4 space-y-3">
           {/* Away Team */}
           <div className="flex justify-between items-center">
             <Link
               href={`/teams/${game.AwayTeam}`}
-              className="font-medium hover:underline"
+              className="flex items-center gap-2 font-medium hover:text-accent transition-colors"
             >
-              {game.AwayTeam}
+              {game.AwayTeamLogo && (
+                <img src={game.AwayTeamLogo} alt={game.AwayTeam} className="w-6 h-6 object-contain" />
+              )}
+              <span>{game.AwayTeamName || game.AwayTeam}</span>
             </Link>
-            <span className="text-2xl font-bold tabular-nums">
+            <span className={`text-2xl font-bold tabular-nums ${isFinal && game.AwayScore !== null && game.HomeScore !== null && game.AwayScore > game.HomeScore ? 'text-primary' : ''}`}>
               {game.AwayScore ?? '-'}
             </span>
           </div>
@@ -43,11 +50,14 @@ export function ScoreCard({ game }: ScoreCardProps) {
           <div className="flex justify-between items-center">
             <Link
               href={`/teams/${game.HomeTeam}`}
-              className="font-medium hover:underline"
+              className="flex items-center gap-2 font-medium hover:text-accent transition-colors"
             >
-              {game.HomeTeam}
+              {game.HomeTeamLogo && (
+                <img src={game.HomeTeamLogo} alt={game.HomeTeam} className="w-6 h-6 object-contain" />
+              )}
+              <span>{game.HomeTeamName || game.HomeTeam}</span>
             </Link>
-            <span className="text-2xl font-bold tabular-nums">
+            <span className={`text-2xl font-bold tabular-nums ${isFinal && game.AwayScore !== null && game.HomeScore !== null && game.HomeScore > game.AwayScore ? 'text-primary' : ''}`}>
               {game.HomeScore ?? '-'}
             </span>
           </div>
@@ -72,32 +82,34 @@ export function ScoreCard({ game }: ScoreCardProps) {
 
         {/* Quarter scores for final games */}
         {isFinal && (
-          <div className="mt-3 pt-3 border-t">
-            <div className="grid grid-cols-6 gap-1 text-xs text-center text-muted-foreground">
-              <div></div>
-              <div>Q1</div>
-              <div>Q2</div>
-              <div>Q3</div>
-              <div>Q4</div>
-              {(game.AwayScoreOvertime !== null || game.HomeScoreOvertime !== null) && (
-                <div>OT</div>
-              )}
-            </div>
-            <div className="grid grid-cols-6 gap-1 text-xs text-center">
-              <div className="text-left">{game.AwayTeam}</div>
-              <div>{game.AwayScoreQuarter1 ?? '-'}</div>
-              <div>{game.AwayScoreQuarter2 ?? '-'}</div>
-              <div>{game.AwayScoreQuarter3 ?? '-'}</div>
-              <div>{game.AwayScoreQuarter4 ?? '-'}</div>
-              {game.AwayScoreOvertime !== null && <div>{game.AwayScoreOvertime}</div>}
-            </div>
-            <div className="grid grid-cols-6 gap-1 text-xs text-center">
-              <div className="text-left">{game.HomeTeam}</div>
-              <div>{game.HomeScoreQuarter1 ?? '-'}</div>
-              <div>{game.HomeScoreQuarter2 ?? '-'}</div>
-              <div>{game.HomeScoreQuarter3 ?? '-'}</div>
-              <div>{game.HomeScoreQuarter4 ?? '-'}</div>
-              {game.HomeScoreOvertime !== null && <div>{game.HomeScoreOvertime}</div>}
+          <div className="px-4 pb-4">
+            <div className="pt-3 border-t border-border/50">
+              <div className="grid grid-cols-6 gap-1 text-xs text-center text-muted-foreground font-medium">
+                <div></div>
+                <div className="bg-secondary/50 rounded py-1">Q1</div>
+                <div className="bg-secondary/50 rounded py-1">Q2</div>
+                <div className="bg-secondary/50 rounded py-1">Q3</div>
+                <div className="bg-secondary/50 rounded py-1">Q4</div>
+                {(game.AwayScoreOvertime !== null || game.HomeScoreOvertime !== null) && (
+                  <div className="bg-accent/20 rounded py-1 text-accent">OT</div>
+                )}
+              </div>
+              <div className="grid grid-cols-6 gap-1 text-xs text-center mt-1">
+                <div className="text-left font-medium">{game.AwayTeam}</div>
+                <div className="py-1">{game.AwayScoreQuarter1 ?? '-'}</div>
+                <div className="py-1">{game.AwayScoreQuarter2 ?? '-'}</div>
+                <div className="py-1">{game.AwayScoreQuarter3 ?? '-'}</div>
+                <div className="py-1">{game.AwayScoreQuarter4 ?? '-'}</div>
+                {game.AwayScoreOvertime !== null && <div className="py-1">{game.AwayScoreOvertime}</div>}
+              </div>
+              <div className="grid grid-cols-6 gap-1 text-xs text-center">
+                <div className="text-left font-medium">{game.HomeTeam}</div>
+                <div className="py-1">{game.HomeScoreQuarter1 ?? '-'}</div>
+                <div className="py-1">{game.HomeScoreQuarter2 ?? '-'}</div>
+                <div className="py-1">{game.HomeScoreQuarter3 ?? '-'}</div>
+                <div className="py-1">{game.HomeScoreQuarter4 ?? '-'}</div>
+                {game.HomeScoreOvertime !== null && <div className="py-1">{game.HomeScoreOvertime}</div>}
+              </div>
             </div>
           </div>
         )}

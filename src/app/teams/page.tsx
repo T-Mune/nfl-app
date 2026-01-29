@@ -83,12 +83,16 @@ function DivisionCard({
   divisionKey: string;
   teams: Team[];
 }) {
+  const isAFC = divisionKey.startsWith('AFC');
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{divisionKey}</CardTitle>
+    <Card className="overflow-hidden border-t-4 border-t-primary">
+      <CardHeader className="pb-2 bg-secondary/30">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isAFC ? 'bg-accent' : 'bg-primary'}`} />
+          {divisionKey}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="grid gap-2">
           {teams
             .sort((a, b) => a.City.localeCompare(b.City))
@@ -96,7 +100,7 @@ function DivisionCard({
               <Link
                 key={team.Key}
                 href={`/teams/${team.Key}`}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors"
               >
                 {team.WikipediaLogoURL ? (
                   <img
@@ -183,7 +187,10 @@ function TeamsLoading() {
 export default function TeamsPage() {
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Teams</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-1.5 h-8 bg-accent rounded-full" />
+        <h1 className="text-3xl font-bold text-primary">Teams</h1>
+      </div>
       <Suspense fallback={<TeamsLoading />}>
         <TeamsContent />
       </Suspense>

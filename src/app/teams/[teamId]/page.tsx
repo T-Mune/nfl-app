@@ -86,33 +86,40 @@ async function TeamDetail({ teamAbbr }: { teamAbbr: string }) {
   return (
     <div>
       {/* Team Header */}
-      <div className="flex items-center gap-4 mb-8">
-        {team.WikipediaLogoURL ? (
-          <img
-            src={team.WikipediaLogoURL}
-            alt={team.FullName}
-            className="w-20 h-20 object-contain"
-          />
-        ) : (
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-            style={{ backgroundColor: `#${team.PrimaryColor}` }}
-          >
-            {team.Key}
+      <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl p-6 mb-8 text-primary-foreground">
+        <div className="flex items-center gap-6">
+          {team.WikipediaLogoURL ? (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+              <img
+                src={team.WikipediaLogoURL}
+                alt={team.FullName}
+                className="w-20 h-20 object-contain"
+              />
+            </div>
+          ) : (
+            <div
+              className="w-24 h-24 rounded-xl flex items-center justify-center text-white text-2xl font-bold"
+              style={{ backgroundColor: `#${team.PrimaryColor}` }}
+            >
+              {team.Key}
+            </div>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold">{team.FullName}</h1>
+            <p className="text-primary-foreground/80">
+              {team.City}
+            </p>
           </div>
-        )}
-        <div>
-          <h1 className="text-3xl font-bold">{team.FullName}</h1>
-          <p className="text-muted-foreground">
-            {team.City}
-          </p>
         </div>
       </div>
 
       {/* Roster */}
-      <h2 className="text-2xl font-bold mb-4">
-        Roster ({players.length} players)
-      </h2>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-1.5 h-6 bg-accent rounded-full" />
+        <h2 className="text-2xl font-bold text-primary">
+          Roster ({players.length} players)
+        </h2>
+      </div>
 
       {groupOrder.map((group) => {
         const groupPlayers = positionGroups[group];

@@ -201,30 +201,45 @@ export async function getTeam(teamKey: string): Promise<Team | undefined> {
   return teams.find((team) => team.Key === teamKey);
 }
 
-// Standings
+// Standings (uses different base URL)
 export async function getStandings(season: number): Promise<Standing[]> {
-  const data = await fetchFromESPN<ESPNStandingsResponse>(
-    `/standings?season=${season}`
-  );
+  const url = `https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?season=${season}`;
+  const response = await fetch(url, {
+    next: { revalidate: 60 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`ESPN Standings API Error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
 
   const standings: Standing[] = [];
 
-  for (const conference of data.children) {
-    for (const division of conference.standings?.entries || []) {
-      // ESPN standings structure varies, handle appropriately
-      const team = division.team;
-      const stats = division.stats || [];
+  // Handle the ESPN standings structure
+  const conferences = data.children || [];
 
-      const getStat = (name: string) =>
-        stats.find((s) => s.name === name)?.value || 0;
+  for (const conference of conferences) {
+    const entries = conference.standings?.entries || [];
+
+    for (const entry of entries) {
+      const team = entry.team;
+      if (!team) continue;
+
+      const stats = entry.stats || [];
+
+      const getStat = (name: string): number => {
+        const stat = stats.find((s: { name: string; value: number }) => s.name === name);
+        return stat?.value || 0;
+      };
 
       standings.push({
         SeasonType: 2,
         Season: season,
-        Conference: conference.abbreviation,
-        Division: '', // ESPN groups differently
-        Team: team.abbreviation,
-        Name: team.displayName,
+        Conference: conference.abbreviation || '',
+        Division: '', // ESPN groups by conference, not division
+        Team: team.abbreviation || '',
+        Name: team.displayName || team.name || '',
         Wins: getStat('wins'),
         Losses: getStat('losses'),
         Ties: getStat('ties'),
@@ -235,15 +250,15 @@ export async function getStandings(season: number): Promise<Standing[]> {
         Touchdowns: 0,
         DivisionWins: getStat('divisionWins'),
         DivisionLosses: getStat('divisionLosses'),
-        ConferenceWins: getStat('conferenceWins'),
-        ConferenceLosses: getStat('conferenceLosses'),
-        TeamID: parseInt(team.id, 10),
+        ConferenceWins: 0,
+        ConferenceLosses: 0,
+        TeamID: parseInt(team.id, 10) || 0,
         DivisionTies: 0,
         ConferenceTies: 0,
-        HomeWins: getStat('homeWins'),
-        HomeLosses: getStat('homeLosses'),
-        AwayWins: getStat('awayWins'),
-        AwayLosses: getStat('awayLosses'),
+        HomeWins: 0,
+        HomeLosses: 0,
+        AwayWins: 0,
+        AwayLosses: 0,
         Streak: 0,
         DivisionRank: 0,
         ConferenceRank: 0,

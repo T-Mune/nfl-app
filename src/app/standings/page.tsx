@@ -3,7 +3,7 @@ import {
   getStandings,
   getCurrentSeason,
   groupStandingsByDivision,
-} from '@/lib/api/sportsdata';
+} from '@/lib/api/espn';
 import {
   Table,
   TableBody,

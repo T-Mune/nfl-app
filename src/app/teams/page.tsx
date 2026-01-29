@@ -1,9 +1,45 @@
 import { Suspense } from 'react';
-import { getTeams } from '@/lib/api/sportsdata';
+import { getTeams } from '@/lib/api/espn';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { Team } from '@/types/nfl';
+
+// NFL team divisions mapping (fixed structure)
+const NFL_DIVISIONS: Record<string, { conference: string; division: string }> = {
+  ARI: { conference: 'NFC', division: 'West' },
+  ATL: { conference: 'NFC', division: 'South' },
+  BAL: { conference: 'AFC', division: 'North' },
+  BUF: { conference: 'AFC', division: 'East' },
+  CAR: { conference: 'NFC', division: 'South' },
+  CHI: { conference: 'NFC', division: 'North' },
+  CIN: { conference: 'AFC', division: 'North' },
+  CLE: { conference: 'AFC', division: 'North' },
+  DAL: { conference: 'NFC', division: 'East' },
+  DEN: { conference: 'AFC', division: 'West' },
+  DET: { conference: 'NFC', division: 'North' },
+  GB: { conference: 'NFC', division: 'North' },
+  HOU: { conference: 'AFC', division: 'South' },
+  IND: { conference: 'AFC', division: 'South' },
+  JAX: { conference: 'AFC', division: 'South' },
+  KC: { conference: 'AFC', division: 'West' },
+  LAC: { conference: 'AFC', division: 'West' },
+  LAR: { conference: 'NFC', division: 'West' },
+  LV: { conference: 'AFC', division: 'West' },
+  MIA: { conference: 'AFC', division: 'East' },
+  MIN: { conference: 'NFC', division: 'North' },
+  NE: { conference: 'AFC', division: 'East' },
+  NO: { conference: 'NFC', division: 'South' },
+  NYG: { conference: 'NFC', division: 'East' },
+  NYJ: { conference: 'AFC', division: 'East' },
+  PHI: { conference: 'NFC', division: 'East' },
+  PIT: { conference: 'AFC', division: 'North' },
+  SEA: { conference: 'NFC', division: 'West' },
+  SF: { conference: 'NFC', division: 'West' },
+  TB: { conference: 'NFC', division: 'South' },
+  TEN: { conference: 'AFC', division: 'South' },
+  WAS: { conference: 'NFC', division: 'East' },
+};
 
 interface FetchResult {
   teams: Record<string, Team[]> | null;
@@ -17,10 +53,17 @@ async function fetchTeamsData(): Promise<FetchResult> {
     // Group by conference and division
     const grouped = teams.reduce(
       (acc, team) => {
-        const key = `${team.Conference} ${team.Division}`;
+        const divInfo = NFL_DIVISIONS[team.Key] || {
+          conference: 'Unknown',
+          division: 'Unknown',
+        };
+        const key = `${divInfo.conference} ${divInfo.division}`;
         if (!acc[key]) {
           acc[key] = [];
         }
+        // Update team with division info
+        team.Conference = divInfo.conference;
+        team.Division = divInfo.division;
         acc[key].push(team);
         return acc;
       },
@@ -55,17 +98,22 @@ function DivisionCard({
                 href={`/teams/${team.Key}`}
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
               >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: `#${team.PrimaryColor}` }}
-                >
-                  {team.Key}
-                </div>
+                {team.WikipediaLogoURL ? (
+                  <img
+                    src={team.WikipediaLogoURL}
+                    alt={team.Key}
+                    className="w-8 h-8 object-contain"
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                    style={{ backgroundColor: `#${team.PrimaryColor}` }}
+                  >
+                    {team.Key}
+                  </div>
+                )}
                 <div>
                   <div className="font-medium">{team.FullName}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {team.HeadCoach && `Coach: ${team.HeadCoach}`}
-                  </div>
                 </div>
               </Link>
             ))}
@@ -83,7 +131,7 @@ async function TeamsContent() {
       <div className="text-center py-8">
         <p className="text-destructive">Failed to load teams.</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Please check your API configuration.
+          Please try again later.
         </p>
       </div>
     );

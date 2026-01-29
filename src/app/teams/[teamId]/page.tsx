@@ -1,7 +1,12 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getTeam, getPlayersByTeam } from '@/lib/api/sportsdata';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  getTeam,
+  getTeamIdFromAbbreviation,
+  getTeamRoster,
+  RosterPlayer,
+} from '@/lib/api/espn';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -11,8 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import Link from 'next/link';
-import { Team, Player } from '@/types/nfl';
+import { Team } from '@/types/nfl';
 
 interface TeamPageProps {
   params: Promise<{ teamId: string }>;
@@ -20,31 +24,38 @@ interface TeamPageProps {
 
 interface FetchResult {
   team: Team | null;
-  players: Player[];
+  players: RosterPlayer[];
   error: boolean;
 }
 
-async function fetchTeamData(teamId: string): Promise<FetchResult> {
+async function fetchTeamData(teamAbbr: string): Promise<FetchResult> {
   try {
-    const [team, players] = await Promise.all([
-      getTeam(teamId),
-      getPlayersByTeam(teamId),
-    ]);
-    return { team: team || null, players, error: false };
+    const team = await getTeam(teamAbbr);
+    if (!team) {
+      return { team: null, players: [], error: false };
+    }
+
+    const teamId = await getTeamIdFromAbbreviation(teamAbbr);
+    if (!teamId) {
+      return { team, players: [], error: false };
+    }
+
+    const players = await getTeamRoster(teamId);
+    return { team, players, error: false };
   } catch {
     return { team: null, players: [], error: true };
   }
 }
 
-async function TeamDetail({ teamId }: { teamId: string }) {
-  const { team, players, error } = await fetchTeamData(teamId);
+async function TeamDetail({ teamAbbr }: { teamAbbr: string }) {
+  const { team, players, error } = await fetchTeamData(teamAbbr);
 
   if (error) {
     return (
       <div className="text-center py-8">
         <p className="text-destructive">Failed to load team details.</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Please check your API configuration.
+          Please try again later.
         </p>
       </div>
     );
@@ -54,145 +65,122 @@ async function TeamDetail({ teamId }: { teamId: string }) {
     notFound();
   }
 
-  // Group players by position
-  const positionGroups: Record<string, Player[]> = {};
+  // Group players by position group
+  const positionGroups: Record<string, RosterPlayer[]> = {};
   players.forEach((player) => {
-    const pos = player.Position || 'Other';
-    if (!positionGroups[pos]) {
-      positionGroups[pos] = [];
+    const group = player.positionGroup || 'other';
+    if (!positionGroups[group]) {
+      positionGroups[group] = [];
     }
-    positionGroups[pos].push(player);
+    positionGroups[group].push(player);
   });
 
-  const positionOrder = [
-    'QB',
-    'RB',
-    'WR',
-    'TE',
-    'OL',
-    'DL',
-    'LB',
-    'DB',
-    'K',
-    'P',
-  ];
-
-  const sortedPlayers = positionOrder
-    .flatMap((pos) => positionGroups[pos] || [])
-    .concat(
-      Object.entries(positionGroups)
-        .filter(([pos]) => !positionOrder.includes(pos))
-        .flatMap(([, p]) => p)
-    )
-    .filter((player) => player.Active)
-    .slice(0, 53);
+  const groupOrder = ['offense', 'defense', 'specialTeams', 'other'];
+  const groupLabels: Record<string, string> = {
+    offense: 'Offense',
+    defense: 'Defense',
+    specialTeams: 'Special Teams',
+    other: 'Other',
+  };
 
   return (
     <div>
       {/* Team Header */}
       <div className="flex items-center gap-4 mb-8">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-          style={{ backgroundColor: `#${team.PrimaryColor}` }}
-        >
-          {team.Key}
-        </div>
+        {team.WikipediaLogoURL ? (
+          <img
+            src={team.WikipediaLogoURL}
+            alt={team.FullName}
+            className="w-20 h-20 object-contain"
+          />
+        ) : (
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold"
+            style={{ backgroundColor: `#${team.PrimaryColor}` }}
+          >
+            {team.Key}
+          </div>
+        )}
         <div>
           <h1 className="text-3xl font-bold">{team.FullName}</h1>
           <p className="text-muted-foreground">
-            {team.Conference} {team.Division}
+            {team.City}
           </p>
-          {team.HeadCoach && (
-            <p className="text-sm text-muted-foreground">
-              Head Coach: {team.HeadCoach}
-            </p>
-          )}
         </div>
       </div>
 
-      {/* Team Info */}
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Conference</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{team.Conference}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Division</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{team.Division}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Bye Week</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Week {team.ByeWeek}</div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Roster */}
-      <h2 className="text-2xl font-bold mb-4">Roster</h2>
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px]">#</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Height/Weight
-                </TableHead>
-                <TableHead className="hidden md:table-cell">College</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedPlayers.map((player) => (
-                <TableRow key={player.PlayerID}>
-                  <TableCell className="font-medium">
-                    {player.Number || '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/players/${player.PlayerID}`}
-                      className="hover:underline"
-                    >
-                      {player.FirstName} {player.LastName}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{player.Position}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        player.Status === 'Active' ? 'default' : 'secondary'
-                      }
-                    >
-                      {player.Status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {player.Height} / {player.Weight} lbs
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {player.College}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <h2 className="text-2xl font-bold mb-4">
+        Roster ({players.length} players)
+      </h2>
+
+      {groupOrder.map((group) => {
+        const groupPlayers = positionGroups[group];
+        if (!groupPlayers || groupPlayers.length === 0) return null;
+
+        return (
+          <div key={group} className="mb-6">
+            <h3 className="text-lg font-semibold mb-2 text-muted-foreground">
+              {groupLabels[group] || group}
+            </h3>
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[60px]">#</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        Height / Weight
+                      </TableHead>
+                      <TableHead className="hidden md:table-cell">Age</TableHead>
+                      <TableHead className="hidden lg:table-cell">Exp</TableHead>
+                      <TableHead className="hidden lg:table-cell">College</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groupPlayers.map((player) => (
+                      <TableRow key={player.id}>
+                        <TableCell className="font-medium">
+                          {player.jersey}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {player.headshot && (
+                              <img
+                                src={player.headshot}
+                                alt={player.fullName}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            )}
+                            <span>{player.fullName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{player.position}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {player.height} / {player.weight}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {player.age || '-'}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">
+                          {player.experience === 0 ? 'R' : player.experience}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">
+                          {player.college}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -217,7 +205,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
 
   return (
     <Suspense fallback={<TeamLoading />}>
-      <TeamDetail teamId={teamId} />
+      <TeamDetail teamAbbr={teamId} />
     </Suspense>
   );
 }

@@ -1,10 +1,11 @@
 import { Suspense } from 'react';
 import {
-  getSchedule,
+  getScoresByWeek,
   getCurrentSeason,
+  getSeasonWeeks,
   formatGameDate,
   formatGameTime,
-} from '@/lib/api/sportsdata';
+} from '@/lib/api/espn';
 import {
   Table,
   TableBody,
@@ -14,56 +15,81 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Schedule } from '@/types/nfl';
+import { Game } from '@/types/nfl';
 
 interface FetchResult {
-  schedule: Schedule[] | null;
+  games: Record<number, Game[]>;
   error: boolean;
   season: number;
 }
 
 async function fetchScheduleData(): Promise<FetchResult> {
   const season = getCurrentSeason();
+  const weeks = getSeasonWeeks();
 
   try {
-    const schedule = await getSchedule(season);
-    return { schedule, error: false, season };
+    // Fetch multiple weeks in parallel
+    const weekPromises = weeks.map(async (week) => {
+      try {
+        const games = await getScoresByWeek(season, week);
+        return { week, games };
+      } catch {
+        return { week, games: [] };
+      }
+    });
+
+    const results = await Promise.all(weekPromises);
+
+    const games: Record<number, Game[]> = {};
+    for (const { week, games: weekGames } of results) {
+      if (weekGames.length > 0) {
+        games[week] = weekGames;
+      }
+    }
+
+    return { games, error: false, season };
   } catch {
-    return { schedule: null, error: true, season };
+    return { games: {}, error: true, season };
   }
 }
 
-async function ScheduleContent() {
-  const { schedule, error, season } = await fetchScheduleData();
+function getGameStatusBadge(game: Game) {
+  if (game.IsOver || game.Closed) {
+    return <Badge variant="secondary">Final</Badge>;
+  }
+  if (game.IsInProgress) {
+    return <Badge variant="default">Live</Badge>;
+  }
+  return null;
+}
 
-  if (error || !schedule) {
+async function ScheduleContent() {
+  const { games, error, season } = await fetchScheduleData();
+
+  if (error) {
     return (
       <div className="text-center py-8">
         <p className="text-destructive">Failed to load schedule.</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Please check your API configuration.
+          Please try again later.
         </p>
       </div>
     );
   }
 
-  // Group by week
-  const weeks = schedule.reduce(
-    (acc, game) => {
-      const week = game.Week;
-      if (!acc[week]) {
-        acc[week] = [];
-      }
-      acc[week].push(game);
-      return acc;
-    },
-    {} as Record<number, Schedule[]>
-  );
-
-  const weekNumbers = Object.keys(weeks)
+  const weekNumbers = Object.keys(games)
     .map(Number)
     .sort((a, b) => a - b);
+
+  if (weekNumbers.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No schedule data available.
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -88,12 +114,13 @@ async function ScheduleContent() {
                   <TableHead>Date</TableHead>
                   <TableHead>Time</TableHead>
                   <TableHead>Away</TableHead>
+                  <TableHead className="text-center">Score</TableHead>
                   <TableHead>Home</TableHead>
-                  <TableHead>Channel</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {weeks[week]
+                {games[week]
                   .sort(
                     (a, b) =>
                       new Date(a.Date).getTime() - new Date(b.Date).getTime()
@@ -107,19 +134,32 @@ async function ScheduleContent() {
                           href={`/teams/${game.AwayTeam}`}
                           className="hover:underline font-medium"
                         >
-                          {game.AwayTeam}
+                          {game.AwayTeamName || game.AwayTeam}
                         </Link>
+                      </TableCell>
+                      <TableCell className="text-center font-mono">
+                        {game.IsOver || game.IsInProgress ? (
+                          <span>
+                            {game.AwayScore ?? '-'} - {game.HomeScore ?? '-'}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">vs</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Link
                           href={`/teams/${game.HomeTeam}`}
                           className="hover:underline font-medium"
                         >
-                          {game.HomeTeam}
+                          {game.HomeTeamName || game.HomeTeam}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {game.Channel || '-'}
+                      <TableCell>
+                        {getGameStatusBadge(game) || (
+                          <span className="text-muted-foreground text-sm">
+                            {game.Channel || 'TBD'}
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

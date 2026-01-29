@@ -314,3 +314,114 @@ export function groupStandingsByDivision(
 
   return grouped;
 }
+
+// ============ Team Roster ============
+
+export interface ESPNRosterResponse {
+  team: {
+    id: string;
+    abbreviation: string;
+    displayName: string;
+    color: string;
+    logo: string;
+  };
+  athletes: ESPNRosterGroup[];
+}
+
+export interface ESPNRosterGroup {
+  position: string;
+  items: ESPNAthlete[];
+}
+
+export interface ESPNAthlete {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  displayName: string;
+  weight?: number;
+  displayWeight?: string;
+  height?: number;
+  displayHeight?: string;
+  age?: number;
+  dateOfBirth?: string;
+  jersey?: string;
+  position?: {
+    abbreviation: string;
+    displayName: string;
+  };
+  college?: {
+    name: string;
+    shortName: string;
+  };
+  headshot?: {
+    href: string;
+  };
+  experience?: {
+    years: number;
+  };
+  status?: {
+    type: string;
+    name: string;
+  };
+}
+
+export interface RosterPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  jersey: string;
+  position: string;
+  positionGroup: string;
+  height: string;
+  weight: string;
+  age: number;
+  college: string;
+  experience: number;
+  headshot: string;
+  status: string;
+}
+
+// Get team roster
+export async function getTeamRoster(teamId: string): Promise<RosterPlayer[]> {
+  const data = await fetchFromESPN<ESPNRosterResponse>(`/teams/${teamId}/roster`);
+
+  const players: RosterPlayer[] = [];
+
+  for (const group of data.athletes || []) {
+    for (const athlete of group.items || []) {
+      players.push({
+        id: athlete.id,
+        firstName: athlete.firstName,
+        lastName: athlete.lastName,
+        fullName: athlete.fullName || athlete.displayName,
+        jersey: athlete.jersey || '-',
+        position: athlete.position?.abbreviation || '',
+        positionGroup: group.position,
+        height: athlete.displayHeight || '-',
+        weight: athlete.displayWeight || '-',
+        age: athlete.age || 0,
+        college: athlete.college?.shortName || athlete.college?.name || '-',
+        experience: athlete.experience?.years || 0,
+        headshot: athlete.headshot?.href || '',
+        status: athlete.status?.name || 'Active',
+      });
+    }
+  }
+
+  return players;
+}
+
+// Get team by ID (ESPN uses numeric IDs)
+export async function getTeamById(teamId: string): Promise<Team | undefined> {
+  const teams = await getTeams();
+  return teams.find((team) => String(team.TeamID) === teamId);
+}
+
+// Get team ID from abbreviation (e.g., "KC" -> "12")
+export async function getTeamIdFromAbbreviation(abbr: string): Promise<string | undefined> {
+  const teams = await getTeams();
+  const team = teams.find((t) => t.Key.toUpperCase() === abbr.toUpperCase());
+  return team ? String(team.TeamID) : undefined;
+}

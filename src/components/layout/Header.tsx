@@ -15,6 +15,7 @@ import {
 
 const navigation = [
   { name: 'Live', href: '/' },
+  { name: 'News', href: '/news' },
   { name: 'Schedule', href: '/schedule' },
   { name: 'Standings', href: '/standings' },
   { name: 'Teams', href: '/teams' },

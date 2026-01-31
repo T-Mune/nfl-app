@@ -173,3 +173,20 @@ export const NFL_DIVISIONS = ['East', 'North', 'South', 'West'] as const;
 
 export type Conference = (typeof NFL_CONFERENCES)[number];
 export type Division = (typeof NFL_DIVISIONS)[number];
+
+// News Article
+export interface NewsArticle {
+  id: number;
+  headline: string;
+  description: string;
+  publishedDate: string;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  articleUrl: string;
+  byline: string | null;
+  isPremium: boolean;
+  categories: {
+    type: string;
+    description: string;
+  }[];
+}

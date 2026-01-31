@@ -185,3 +185,41 @@ export interface ESPNStandingEntry {
     displayValue: string;
   }[];
 }
+
+// ESPN News API Types
+export interface ESPNNewsResponse {
+  header: string;
+  articles: ESPNArticle[];
+}
+
+export interface ESPNArticle {
+  id: number;
+  headline: string;
+  description: string;
+  published: string; // ISO 8601
+  lastModified: string;
+  premium: boolean;
+  images?: ESPNNewsImage[];
+  categories?: ESPNNewsCategory[];
+  links: {
+    web: { href: string };
+  };
+  byline?: string;
+}
+
+export interface ESPNNewsImage {
+  id: number;
+  type: string;
+  url: string;
+  caption?: string;
+  alt?: string;
+  credit?: string;
+  height: number;
+  width: number;
+}
+
+export interface ESPNNewsCategory {
+  id: number;
+  description: string;
+  type: string; // "team" | "athlete" | "league" | "topic"
+}

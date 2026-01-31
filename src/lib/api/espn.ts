@@ -4,8 +4,10 @@ import {
   ESPNTeamsResponse,
   ESPNTeamDetail,
   ESPNStandingsResponse,
+  ESPNNewsResponse,
+  ESPNArticle,
 } from '@/types/espn';
-import { Game, Team, Standing } from '@/types/nfl';
+import { Game, Team, Standing, NewsArticle } from '@/types/nfl';
 import { NFL_DIVISIONS } from '@/lib/nfl-divisions';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
@@ -493,4 +495,68 @@ export async function getTeamIdFromAbbreviation(abbr: string): Promise<string | 
   const teams = await getTeams();
   const team = teams.find((t) => t.Key.toUpperCase() === abbr.toUpperCase());
   return team ? String(team.TeamID) : undefined;
+}
+
+// ============ News ============
+
+// Get NFL news articles
+export async function getNews(): Promise<NewsArticle[]> {
+  const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/news`;
+  const response = await fetch(url, {
+    next: { revalidate: 30 }, // Cache for 30 seconds (news is time-sensitive)
+  });
+
+  if (!response.ok) {
+    throw new Error(`ESPN News API Error: ${response.statusText}`);
+  }
+
+  const data: ESPNNewsResponse = await response.json();
+  return data.articles.map(convertESPNArticleToNewsArticle);
+}
+
+// Convert ESPN article to NewsArticle
+function convertESPNArticleToNewsArticle(article: ESPNArticle): NewsArticle {
+  const headerImage = article.images?.find(img => img.type === 'header');
+  const primaryImage = headerImage || article.images?.[0];
+
+  const relevantCategories = (article.categories || [])
+    .filter(cat => ['team', 'athlete', 'topic', 'league'].includes(cat.type))
+    .map(cat => ({ type: cat.type, description: cat.description }))
+    .slice(0, 3); // Limit to 3 badges
+
+  return {
+    id: article.id,
+    headline: article.headline,
+    description: article.description,
+    publishedDate: article.published,
+    imageUrl: primaryImage?.url || null,
+    imageAlt: primaryImage?.alt || primaryImage?.caption || null,
+    articleUrl: article.links.web.href,
+    byline: article.byline || null,
+    isPremium: article.premium,
+    categories: relevantCategories,
+  };
+}
+
+// Format news article publish date
+export function formatNewsDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffHours < 1) {
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    return diffMinutes < 1 ? 'Just now' : `${diffMinutes}分前`;
+  }
+
+  if (diffHours < 24) return `${diffHours}時間前`;
+  if (diffDays < 7) return `${diffDays}日前`;
+
+  return date.toLocaleDateString('ja-JP', {
+    month: 'short',
+    day: 'numeric',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  });
 }

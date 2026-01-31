@@ -6,6 +6,7 @@ import {
   getCurrentSeason,
   getSeasonWeeks,
   getLiveScores,
+  SeasonType,
 } from '@/lib/api/espn';
 import { Game } from '@/types/nfl';
 
@@ -14,31 +15,53 @@ interface FetchResult {
   error: boolean;
   season: number;
   week: number;
+  seasonType: number;
 }
 
 async function fetchScores(
   season: number,
-  week: number
+  week: number,
+  seasonType: number
 ): Promise<FetchResult> {
   try {
-    const games = await getScoresByWeek(season, week);
-    return { games, error: false, season, week };
+    const games = await getScoresByWeek(season, week, seasonType);
+    return { games, error: false, season, week, seasonType };
   } catch {
-    return { games: null, error: true, season, week };
+    return { games: null, error: true, season, week, seasonType };
   }
 }
 
-async function fetchCurrentWeek(): Promise<{ week: number; season: number }> {
+async function fetchCurrentWeek(): Promise<{
+  week: number;
+  season: number;
+  seasonType: number;
+}> {
   try {
     const result = await getLiveScores();
-    return { week: result.week, season: result.season };
+    return {
+      week: result.week,
+      season: result.season,
+      seasonType: result.seasonType,
+    };
   } catch {
-    return { week: 1, season: getCurrentSeason() };
+    return {
+      week: 1,
+      season: getCurrentSeason(),
+      seasonType: SeasonType.REGULAR,
+    };
   }
 }
 
-async function Scores({ season, week }: { season: number; week: number }) {
-  const { games, error } = await fetchScores(season, week);
+async function Scores({
+  season,
+  week,
+  seasonType,
+}: {
+  season: number;
+  week: number;
+  seasonType: number;
+}) {
+  const { games, error } = await fetchScores(season, week, seasonType);
 
   if (error || !games) {
     return (
@@ -76,7 +99,11 @@ function ScoresLoading() {
 }
 
 interface HomePageProps {
-  searchParams: Promise<{ week?: string; season?: string }>;
+  searchParams: Promise<{
+    week?: string;
+    season?: string;
+    seasonType?: string;
+  }>;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -85,7 +112,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const season = params.season ? parseInt(params.season, 10) : current.season;
   const week = params.week ? parseInt(params.week, 10) : current.week;
-  const weeks = getSeasonWeeks();
+  const seasonType = params.seasonType
+    ? parseInt(params.seasonType, 10)
+    : current.seasonType;
+  const weeks = getSeasonWeeks(seasonType);
 
   return (
     <div>
@@ -98,19 +128,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           weeks={weeks}
           currentWeek={week}
           season={season}
+          seasonType={seasonType}
           currentSeason={current.season}
+          currentSeasonType={current.seasonType}
         />
       </div>
 
       <div className="mb-4 text-xs sm:text-sm text-muted-foreground bg-secondary/50 px-3 sm:px-4 py-2 rounded-md inline-block">
         {season} Season - Week {week}
-        {week === current.week && season === current.season && (
-          <span className="ml-2 text-accent font-medium">(Current)</span>
-        )}
+        {week === current.week &&
+          season === current.season &&
+          seasonType === current.seasonType && (
+            <span className="ml-2 text-accent font-medium">(Current)</span>
+          )}
       </div>
 
-      <Suspense key={`${season}-${week}`} fallback={<ScoresLoading />}>
-        <Scores season={season} week={week} />
+      <Suspense
+        key={`${season}-${week}-${seasonType}`}
+        fallback={<ScoresLoading />}
+      >
+        <Scores season={season} week={week} seasonType={seasonType} />
       </Suspense>
     </div>
   );

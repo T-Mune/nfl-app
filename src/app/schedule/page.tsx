@@ -3,48 +3,57 @@ import {
   getScoresByWeek,
   getCurrentSeason,
   getSeasonWeeks,
+  SeasonType,
 } from '@/lib/api/espn';
 import { WeekSelector } from '@/components/schedule/WeekSelector';
 import { Game } from '@/types/nfl';
 
 interface FetchResult {
-  games: Record<number, Game[]>;
+  games: Record<string, Game[]>; // key format: "seasonType-week"
   error: boolean;
   season: number;
+  seasonTypes: number[];
 }
 
 async function fetchScheduleData(): Promise<FetchResult> {
   const season = getCurrentSeason();
-  const weeks = getSeasonWeeks();
+  const seasonTypes = [
+    SeasonType.PRESEASON,
+    SeasonType.REGULAR,
+    SeasonType.POSTSEASON,
+  ];
 
   try {
-    // Fetch multiple weeks in parallel
-    const weekPromises = weeks.map(async (week) => {
-      try {
-        const games = await getScoresByWeek(season, week);
-        return { week, games };
-      } catch {
-        return { week, games: [] };
-      }
+    // Fetch data for all season types
+    const allPromises = seasonTypes.flatMap((seasonType) => {
+      const weeks = getSeasonWeeks(seasonType);
+      return weeks.map(async (week) => {
+        try {
+          const games = await getScoresByWeek(season, week, seasonType);
+          return { seasonType, week, games };
+        } catch {
+          return { seasonType, week, games: [] };
+        }
+      });
     });
 
-    const results = await Promise.all(weekPromises);
+    const results = await Promise.all(allPromises);
 
-    const games: Record<number, Game[]> = {};
-    for (const { week, games: weekGames } of results) {
+    const games: Record<string, Game[]> = {};
+    for (const { seasonType, week, games: weekGames } of results) {
       if (weekGames.length > 0) {
-        games[week] = weekGames;
+        games[`${seasonType}-${week}`] = weekGames;
       }
     }
 
-    return { games, error: false, season };
+    return { games, error: false, season, seasonTypes };
   } catch {
-    return { games: {}, error: true, season };
+    return { games: {}, error: true, season, seasonTypes: [] };
   }
 }
 
 async function ScheduleContent() {
-  const { games, error, season } = await fetchScheduleData();
+  const { games, error, season, seasonTypes } = await fetchScheduleData();
 
   if (error) {
     return (
@@ -57,11 +66,7 @@ async function ScheduleContent() {
     );
   }
 
-  const weekNumbers = Object.keys(games)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  if (weekNumbers.length === 0) {
+  if (Object.keys(games).length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No schedule data available.
@@ -69,7 +74,9 @@ async function ScheduleContent() {
     );
   }
 
-  return <WeekSelector games={games} season={season} />;
+  return (
+    <WeekSelector games={games} season={season} seasonTypes={seasonTypes} />
+  );
 }
 
 function ScheduleLoading() {

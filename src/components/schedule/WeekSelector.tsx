@@ -19,11 +19,16 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { formatGameDate, formatGameTime } from '@/lib/api/espn';
+import {
+  formatGameDate,
+  formatGameTime,
+  getSeasonTypeLabel,
+} from '@/lib/api/espn';
 
 interface WeekSelectorProps {
-  games: Record<number, Game[]>;
+  games: Record<string, Game[]>; // key format: "seasonType-week"
   season: number;
+  seasonTypes: number[];
 }
 
 function getGameStatusBadge(game: Game) {
@@ -36,14 +41,39 @@ function getGameStatusBadge(game: Game) {
   return null;
 }
 
-export function WeekSelector({ games, season }: WeekSelectorProps) {
-  const weekNumbers = Object.keys(games)
-    .map(Number)
-    .sort((a, b) => a - b);
+export function WeekSelector({
+  games,
+  season,
+  seasonTypes,
+}: WeekSelectorProps) {
+  // Parse available weeks grouped by season type
+  const weeksBySeasonType: Record<number, number[]> = {};
+  Object.keys(games).forEach((key) => {
+    const [st, w] = key.split('-').map(Number);
+    if (!weeksBySeasonType[st]) {
+      weeksBySeasonType[st] = [];
+    }
+    if (!weeksBySeasonType[st].includes(w)) {
+      weeksBySeasonType[st].push(w);
+    }
+  });
 
-  const [selectedWeek, setSelectedWeek] = useState(String(weekNumbers[0] || 1));
+  // Sort weeks for each season type
+  Object.keys(weeksBySeasonType).forEach((st) => {
+    weeksBySeasonType[Number(st)].sort((a, b) => a - b);
+  });
 
-  const currentGames = games[Number(selectedWeek)] || [];
+  // Default to first available season type and week
+  const firstSeasonType = seasonTypes[0] || 2;
+  const firstWeek = weeksBySeasonType[firstSeasonType]?.[0] || 1;
+
+  const [selectedSeasonType, setSelectedSeasonType] =
+    useState(String(firstSeasonType));
+  const [selectedWeek, setSelectedWeek] = useState(String(firstWeek));
+
+  const currentWeeks = weeksBySeasonType[Number(selectedSeasonType)] || [];
+  const currentGames =
+    games[`${selectedSeasonType}-${selectedWeek}`] || [];
 
   return (
     <div>
@@ -51,12 +81,32 @@ export function WeekSelector({ games, season }: WeekSelectorProps) {
         <div className="text-xs sm:text-sm text-muted-foreground bg-secondary/50 px-3 sm:px-4 py-2 rounded-md">
           {season} Season Schedule
         </div>
+        <Select
+          value={selectedSeasonType}
+          onValueChange={(value) => {
+            setSelectedSeasonType(value);
+            // Reset to first week of new season type
+            const firstWeekOfType = weeksBySeasonType[Number(value)]?.[0] || 1;
+            setSelectedWeek(String(firstWeekOfType));
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Select season type" />
+          </SelectTrigger>
+          <SelectContent>
+            {seasonTypes.map((st) => (
+              <SelectItem key={st} value={String(st)}>
+                {getSeasonTypeLabel(st)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={selectedWeek} onValueChange={setSelectedWeek}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Select week" />
           </SelectTrigger>
           <SelectContent>
-            {weekNumbers.map((week) => (
+            {currentWeeks.map((week) => (
               <SelectItem key={week} value={String(week)}>
                 Week {week}
               </SelectItem>

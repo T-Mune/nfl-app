@@ -9,6 +9,39 @@ import { Game, Team, Standing } from '@/types/nfl';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 
+// Season types
+export enum SeasonType {
+  PRESEASON = 1,
+  REGULAR = 2,
+  POSTSEASON = 3,
+}
+
+export function getSeasonTypeLabel(type: number): string {
+  switch (type) {
+    case SeasonType.PRESEASON:
+      return 'Preseason';
+    case SeasonType.REGULAR:
+      return 'Regular Season';
+    case SeasonType.POSTSEASON:
+      return 'Postseason';
+    default:
+      return 'Unknown';
+  }
+}
+
+export function getSeasonTypeShortLabel(type: number): string {
+  switch (type) {
+    case SeasonType.PRESEASON:
+      return 'PRE';
+    case SeasonType.REGULAR:
+      return 'REG';
+    case SeasonType.POSTSEASON:
+      return 'POST';
+    default:
+      return '';
+  }
+}
+
 async function fetchFromESPN<T>(endpoint: string): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
   const response = await fetch(url, {
@@ -127,37 +160,56 @@ export function getCurrentWeek(): number {
   return 1;
 }
 
-// Get all weeks for a season
-export function getSeasonWeeks(): number[] {
-  return Array.from({ length: 18 }, (_, i) => i + 1);
+// Get all weeks for a season type
+export function getSeasonWeeks(seasonType: number = SeasonType.REGULAR): number[] {
+  switch (seasonType) {
+    case SeasonType.PRESEASON:
+      return Array.from({ length: 4 }, (_, i) => i + 1); // 4 preseason weeks
+    case SeasonType.REGULAR:
+      return Array.from({ length: 18 }, (_, i) => i + 1); // 18 regular season weeks
+    case SeasonType.POSTSEASON:
+      return Array.from({ length: 5 }, (_, i) => i + 1); // Wild Card, Divisional, Conference, Pro Bowl, Super Bowl
+    default:
+      return Array.from({ length: 18 }, (_, i) => i + 1);
+  }
 }
 
 // Scores (Live and Final)
 export async function getScoresByWeek(
   season: number,
-  week: number
+  week: number,
+  seasonType: number = SeasonType.REGULAR
 ): Promise<Game[]> {
   const dates = getWeekDates(season, week);
   const data = await fetchFromESPN<ESPNScoreboardResponse>(
-    `/scoreboard?dates=${dates.start}-${dates.end}`
+    `/scoreboard?dates=${dates.start}-${dates.end}&seasontype=${seasonType}`
   );
 
-  // Filter events by the requested week
+  // Filter events by the requested week and season type
   const weekEvents = data.events.filter(
-    (event) => event.week.number === week && event.season.year === season
+    (event) =>
+      event.week.number === week &&
+      event.season.year === season &&
+      event.season.type === seasonType
   );
 
   return weekEvents.map(convertESPNEventToGame);
 }
 
 // Get current scoreboard (live scores)
-export async function getLiveScores(): Promise<{ games: Game[]; week: number; season: number }> {
+export async function getLiveScores(): Promise<{
+  games: Game[];
+  week: number;
+  season: number;
+  seasonType: number;
+}> {
   const data = await fetchFromESPN<ESPNScoreboardResponse>('/scoreboard');
 
   return {
     games: data.events.map(convertESPNEventToGame),
     week: data.week?.number || 1,
     season: data.season?.year || getCurrentSeason(),
+    seasonType: data.season?.type || SeasonType.REGULAR,
   };
 }
 

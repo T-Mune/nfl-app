@@ -98,16 +98,16 @@ async function ScheduleContent() {
       </div>
 
       <Tabs defaultValue={String(weekNumbers[0] || 1)} className="w-full">
-        <TabsList className="flex flex-wrap h-auto gap-1 mb-4">
+        <TabsList className="flex flex-wrap h-auto gap-1 mb-4 p-2">
           {weekNumbers.map((week) => (
-            <TabsTrigger key={week} value={String(week)} className="text-xs px-2 sm:px-3">
+            <TabsTrigger key={week} value={String(week)} className="text-xs px-2 sm:px-3 py-1.5">
               Week {week}
             </TabsTrigger>
           ))}
         </TabsList>
 
         {weekNumbers.map((week) => (
-          <TabsContent key={week} value={String(week)}>
+          <TabsContent key={week} value={String(week)} className="mt-4">
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="inline-block min-w-full align-middle px-4 sm:px-0">
                 <Table>

@@ -150,13 +150,13 @@ async function TeamsContent() {
 
   return (
     <Tabs defaultValue="afc" className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="afc">AFC</TabsTrigger>
-        <TabsTrigger value="nfc">NFC</TabsTrigger>
+      <TabsList className="mb-4 grid grid-cols-2 w-full sm:w-auto">
+        <TabsTrigger value="afc" className="text-sm sm:text-base">AFC</TabsTrigger>
+        <TabsTrigger value="nfc" className="text-sm sm:text-base">NFC</TabsTrigger>
       </TabsList>
 
       <TabsContent value="afc">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {afcDivisions.map((div) => (
             <DivisionCard key={div} divisionKey={div} teams={teams[div]} />
           ))}
@@ -164,7 +164,7 @@ async function TeamsContent() {
       </TabsContent>
 
       <TabsContent value="nfc">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {nfcDivisions.map((div) => (
             <DivisionCard key={div} divisionKey={div} teams={teams[div]} />
           ))}
@@ -187,9 +187,9 @@ function TeamsLoading() {
 export default function TeamsPage() {
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-1.5 h-8 bg-accent rounded-full" />
-        <h1 className="text-3xl font-bold text-primary">Teams</h1>
+      <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="w-1 sm:w-1.5 h-6 sm:h-8 bg-accent rounded-full" />
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Teams</h1>
       </div>
       <Suspense fallback={<TeamsLoading />}>
         <TeamsContent />

@@ -89,10 +89,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-accent rounded-full" />
-          <h1 className="text-3xl font-bold text-primary">Live Scores</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-1 sm:w-1.5 h-6 sm:h-8 bg-accent rounded-full" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">Live Scores</h1>
         </div>
         <WeekSelector
           weeks={weeks}
@@ -102,7 +102,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         />
       </div>
 
-      <div className="mb-4 text-sm text-muted-foreground bg-secondary/50 px-4 py-2 rounded-md inline-block">
+      <div className="mb-4 text-xs sm:text-sm text-muted-foreground bg-secondary/50 px-3 sm:px-4 py-2 rounded-md inline-block">
         {season} Season - Week {week}
         {week === current.week && season === current.season && (
           <span className="ml-2 text-accent font-medium">(Current)</span>

@@ -31,33 +31,33 @@ export function ScoreCard({ game }: ScoreCardProps) {
 
         <div className="p-4 space-y-3">
           {/* Away Team */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <Link
               href={`/teams/${game.AwayTeam}`}
-              className="flex items-center gap-2 font-medium hover:text-accent transition-colors"
+              className="flex items-center gap-2 font-medium hover:text-accent transition-colors min-w-0 flex-1"
             >
               {game.AwayTeamLogo && (
-                <img src={game.AwayTeamLogo} alt={game.AwayTeam} className="w-6 h-6 object-contain" />
+                <img src={game.AwayTeamLogo} alt={game.AwayTeam} className="w-6 h-6 flex-shrink-0 object-contain" />
               )}
-              <span>{game.AwayTeamName || game.AwayTeam}</span>
+              <span className="truncate text-sm sm:text-base">{game.AwayTeamName || game.AwayTeam}</span>
             </Link>
-            <span className={`text-2xl font-bold tabular-nums ${isFinal && game.AwayScore !== null && game.HomeScore !== null && game.AwayScore > game.HomeScore ? 'text-primary' : ''}`}>
+            <span className={`text-xl sm:text-2xl font-bold tabular-nums flex-shrink-0 ${isFinal && game.AwayScore !== null && game.HomeScore !== null && game.AwayScore > game.HomeScore ? 'text-primary' : ''}`}>
               {game.AwayScore ?? '-'}
             </span>
           </div>
 
           {/* Home Team */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <Link
               href={`/teams/${game.HomeTeam}`}
-              className="flex items-center gap-2 font-medium hover:text-accent transition-colors"
+              className="flex items-center gap-2 font-medium hover:text-accent transition-colors min-w-0 flex-1"
             >
               {game.HomeTeamLogo && (
-                <img src={game.HomeTeamLogo} alt={game.HomeTeam} className="w-6 h-6 object-contain" />
+                <img src={game.HomeTeamLogo} alt={game.HomeTeam} className="w-6 h-6 flex-shrink-0 object-contain" />
               )}
-              <span>{game.HomeTeamName || game.HomeTeam}</span>
+              <span className="truncate text-sm sm:text-base">{game.HomeTeamName || game.HomeTeam}</span>
             </Link>
-            <span className={`text-2xl font-bold tabular-nums ${isFinal && game.AwayScore !== null && game.HomeScore !== null && game.HomeScore > game.AwayScore ? 'text-primary' : ''}`}>
+            <span className={`text-xl sm:text-2xl font-bold tabular-nums flex-shrink-0 ${isFinal && game.AwayScore !== null && game.HomeScore !== null && game.HomeScore > game.AwayScore ? 'text-primary' : ''}`}>
               {game.HomeScore ?? '-'}
             </span>
           </div>

@@ -4,42 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { Team } from '@/types/nfl';
-
-// NFL team divisions mapping (fixed structure)
-const NFL_DIVISIONS: Record<string, { conference: string; division: string }> = {
-  ARI: { conference: 'NFC', division: 'West' },
-  ATL: { conference: 'NFC', division: 'South' },
-  BAL: { conference: 'AFC', division: 'North' },
-  BUF: { conference: 'AFC', division: 'East' },
-  CAR: { conference: 'NFC', division: 'South' },
-  CHI: { conference: 'NFC', division: 'North' },
-  CIN: { conference: 'AFC', division: 'North' },
-  CLE: { conference: 'AFC', division: 'North' },
-  DAL: { conference: 'NFC', division: 'East' },
-  DEN: { conference: 'AFC', division: 'West' },
-  DET: { conference: 'NFC', division: 'North' },
-  GB: { conference: 'NFC', division: 'North' },
-  HOU: { conference: 'AFC', division: 'South' },
-  IND: { conference: 'AFC', division: 'South' },
-  JAX: { conference: 'AFC', division: 'South' },
-  KC: { conference: 'AFC', division: 'West' },
-  LAC: { conference: 'AFC', division: 'West' },
-  LAR: { conference: 'NFC', division: 'West' },
-  LV: { conference: 'AFC', division: 'West' },
-  MIA: { conference: 'AFC', division: 'East' },
-  MIN: { conference: 'NFC', division: 'North' },
-  NE: { conference: 'AFC', division: 'East' },
-  NO: { conference: 'NFC', division: 'South' },
-  NYG: { conference: 'NFC', division: 'East' },
-  NYJ: { conference: 'AFC', division: 'East' },
-  PHI: { conference: 'NFC', division: 'East' },
-  PIT: { conference: 'AFC', division: 'North' },
-  SEA: { conference: 'NFC', division: 'West' },
-  SF: { conference: 'NFC', division: 'West' },
-  TB: { conference: 'NFC', division: 'South' },
-  TEN: { conference: 'AFC', division: 'South' },
-  WAS: { conference: 'NFC', division: 'East' },
-};
+import { NFL_DIVISIONS } from '@/lib/nfl-divisions';
 
 interface FetchResult {
   teams: Record<string, Team[]> | null;

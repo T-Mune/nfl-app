@@ -6,6 +6,7 @@ import {
   ESPNStandingsResponse,
 } from '@/types/espn';
 import { Game, Team, Standing } from '@/types/nfl';
+import { NFL_DIVISIONS } from '@/lib/nfl-divisions';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 
@@ -290,7 +291,7 @@ export async function getStandings(season: number): Promise<Standing[]> {
         SeasonType: 2,
         Season: season,
         Conference: conference.abbreviation || '',
-        Division: '', // ESPN groups by conference, not division
+        Division: NFL_DIVISIONS[team.abbreviation]?.division || '',
         Team: team.abbreviation || '',
         Name: team.displayName || team.name || '',
         Wins: getStat('wins'),

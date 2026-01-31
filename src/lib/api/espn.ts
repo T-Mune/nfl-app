@@ -180,12 +180,13 @@ export async function getScoresByWeek(
   week: number,
   seasonType: number = SeasonType.REGULAR
 ): Promise<Game[]> {
-  const dates = getWeekDates(season, week);
+  // For non-regular season, we'll fetch all events and filter by week
+  // The API's calendar provides proper date ranges for each season type
   const data = await fetchFromESPN<ESPNScoreboardResponse>(
-    `/scoreboard?dates=${dates.start}-${dates.end}&seasontype=${seasonType}`
+    `/scoreboard?seasontype=${seasonType}&week=${week}`
   );
 
-  // Filter events by the requested week and season type
+  // Filter events by the requested week, season, and season type
   const weekEvents = data.events.filter(
     (event) =>
       event.week.number === week &&

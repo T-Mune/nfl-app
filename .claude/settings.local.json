@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:nfl-app-inky.vercel.app)",
+      "Bash(vercel --prod:*)",
+      "Bash(npm run lint)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx shadcn@latest add:*)"
     ]
   }
 }

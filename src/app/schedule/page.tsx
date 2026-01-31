@@ -3,20 +3,8 @@ import {
   getScoresByWeek,
   getCurrentSeason,
   getSeasonWeeks,
-  formatGameDate,
-  formatGameTime,
 } from '@/lib/api/espn';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
+import { WeekSelector } from '@/components/schedule/WeekSelector';
 import { Game } from '@/types/nfl';
 
 interface FetchResult {
@@ -55,16 +43,6 @@ async function fetchScheduleData(): Promise<FetchResult> {
   }
 }
 
-function getGameStatusBadge(game: Game) {
-  if (game.IsOver || game.Closed) {
-    return <Badge variant="secondary">Final</Badge>;
-  }
-  if (game.IsInProgress) {
-    return <Badge variant="default">Live</Badge>;
-  }
-  return null;
-}
-
 async function ScheduleContent() {
   const { games, error, season } = await fetchScheduleData();
 
@@ -91,91 +69,7 @@ async function ScheduleContent() {
     );
   }
 
-  return (
-    <div>
-      <div className="mb-4 text-xs sm:text-sm text-muted-foreground bg-secondary/50 px-3 sm:px-4 py-2 rounded-md inline-block">
-        {season} Season Schedule
-      </div>
-
-      <Tabs defaultValue={String(weekNumbers[0] || 1)} className="w-full">
-        <TabsList className="flex flex-wrap h-auto gap-1 mb-4 p-2">
-          {weekNumbers.map((week) => (
-            <TabsTrigger key={week} value={String(week)} className="text-xs px-2 sm:px-3 py-1.5">
-              Week {week}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {weekNumbers.map((week) => (
-          <TabsContent key={week} value={String(week)} className="mt-4">
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs sm:text-sm">Date</TableHead>
-                      <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Time</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Away</TableHead>
-                      <TableHead className="text-center text-xs sm:text-sm">Score</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Home</TableHead>
-                      <TableHead className="text-xs sm:text-sm hidden md:table-cell">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-              <TableBody>
-                {games[week]
-                  .sort(
-                    (a, b) =>
-                      new Date(a.Date).getTime() - new Date(b.Date).getTime()
-                  )
-                  .map((game) => (
-                    <TableRow key={game.GameKey}>
-                      <TableCell className="text-xs sm:text-sm whitespace-nowrap">{formatGameDate(game.Date)}</TableCell>
-                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell whitespace-nowrap">{formatGameTime(game.Date)}</TableCell>
-                      <TableCell className="text-xs sm:text-sm">
-                        <Link
-                          href={`/teams/${game.AwayTeam}`}
-                          className="hover:underline font-medium"
-                        >
-                          <span className="hidden sm:inline">{game.AwayTeamName || game.AwayTeam}</span>
-                          <span className="sm:hidden">{game.AwayTeam}</span>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center font-mono text-xs sm:text-sm">
-                        {game.IsOver || game.IsInProgress ? (
-                          <span>
-                            {game.AwayScore ?? '-'} - {game.HomeScore ?? '-'}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">vs</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs sm:text-sm">
-                        <Link
-                          href={`/teams/${game.HomeTeam}`}
-                          className="hover:underline font-medium"
-                        >
-                          <span className="hidden sm:inline">{game.HomeTeamName || game.HomeTeam}</span>
-                          <span className="sm:hidden">{game.HomeTeam}</span>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {getGameStatusBadge(game) || (
-                          <span className="text-muted-foreground text-xs sm:text-sm">
-                            {game.Channel || 'TBD'}
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-                </Table>
-              </div>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  );
+  return <WeekSelector games={games} season={season} />;
 }
 
 function ScheduleLoading() {
